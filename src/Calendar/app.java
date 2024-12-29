@@ -14,11 +14,12 @@ public class app extends JFrame{
 	private static final long serialVersionUID = 1L;
 	final Calendario dataAtual;
 	Calendario data;
-	JLabel labelTitulo;
+	JPanel painelExterno;
+	JPanel sombraPanel;
 	JButton botaoTitulo;
 	JLabel labelSemana;
 	JLabel label[];
-	JPanel painelDaJanela;
+	JDesktopPane painelPrincipal;
 	JanelaAnoMes janelaAnoMes;
     public app(Calendario data) {
     	super("Calendário");
@@ -27,48 +28,49 @@ public class app extends JFrame{
     	this.dataAtual = data;
     	
     	
-    	painelDaJanela = new JPanel() {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-			public Image imageFundo = new ImageIcon(this.getClass().getResource("/fundo.png")).getImage();
-    		
-    		@Override
-    		protected void paintComponent(Graphics g) {
-    			super.paintComponent(g);
-    			g.drawImage(imageFundo, 0, 0, getWidth(), getHeight(), this);
-
-    		}
-    	};
+    	painelPrincipal = new JDesktopPane(); 
+    	add(painelPrincipal);
     	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
+  
     	
     	ImageIcon iconeDaJanela = new ImageIcon(this.getClass().getResource("/calendario.png"));
     	setIconImage(iconeDaJanela.getImage());
-    	setContentPane(painelDaJanela);
-    	painelDaJanela.setLayout(null);
+    	setContentPane(painelPrincipal);
+    	painelPrincipal.setLayout(null);
     	
-    	painelDaJanela.addMouseListener(new MouseAdapter() {
+    	painelPrincipal.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 fecharJanelaAnoMes(e);
             }
         });
     	
+    	sombraPanel = new JPanel() {
+    	    /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+    	    protected void paintComponent(Graphics g) {
+    	        super.paintComponent(g);
+    	        Graphics2D g2d = (Graphics2D) g.create();
+    	        g2d.setColor(new Color(0, 0, 0, 128)); // Fundo semi-transparente
+    	        g2d.fillRect(0, 0, getWidth(), getHeight());
+    	        g2d.dispose();
+    	    }
+    	};
+    	sombraPanel.setLayout(null);
+    	sombraPanel.setOpaque(false);
+    	sombraPanel.setVisible(false);
     	
     	
+    	painelPrincipal.add(sombraPanel, JLayeredPane.DEFAULT_LAYER);
     	
     	botaoTitulo = new JButton(String.format("%s %d" , data.nomeMes, data.anoNumero));
     	botaoTitulo.setBounds(350, 20, 100, 30);
     	botaoTitulo.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-    	getContentPane().add(botaoTitulo);
+    	painelPrincipal.add(botaoTitulo);
     	
     	botaoTitulo.addActionListener(this::abrirJanelaAnoMes);
     	
@@ -140,9 +142,12 @@ public class app extends JFrame{
     
     public void fecharJanelaAnoMes(MouseEvent e) {
         if (janelaAnoMes != null && janelaAnoMes.isVisible()) {
-            if (e == null || !janelaAnoMes.getBounds().contains(SwingUtilities.convertPoint(painelDaJanela, e.getPoint(), janelaAnoMes))) {
+            if (e == null || !janelaAnoMes.getBounds().contains(SwingUtilities.convertPoint(painelPrincipal, e.getPoint(), janelaAnoMes))) {
                 janelaAnoMes.dispose();
                 atualizarLayoutDias(data);
+                sombraPanel.setVisible(false);
+                painelExterno.setVisible(false);
+                
             }
         }
     }
@@ -152,23 +157,45 @@ public class app extends JFrame{
     
     
     public void abrirJanelaAnoMes(ActionEvent e) {
-        if (janelaAnoMes == null || !janelaAnoMes.isVisible()) {
-            janelaAnoMes = new JanelaAnoMes(this, data);
-            add(janelaAnoMes);
-            janelaAnoMes.setVisible(true);
-            
-        }
+    	sombraPanel.setBounds(0, 0, painelPrincipal.getWidth(), painelPrincipal.getHeight());
+        sombraPanel.setVisible(true); // Torna visível o painel de sombra
+        //sombraPanel.repaint();
+    	//Cria um painel para fixar a janela de Ano e Mês, e sobrepo-la.
+    	if (painelExterno == null) {
+	    	painelExterno = new JPanel();
+	    	painelExterno.setLayout(null);
+	    	painelExterno.setBounds(0, 0, painelPrincipal.getWidth(), painelPrincipal.getHeight());
+	    	painelExterno.setOpaque(false);
+	    	painelPrincipal.add(painelExterno, JLayeredPane.DRAG_LAYER);
+	    	
+    	}
+    	painelPrincipal.add(painelExterno, JLayeredPane.DRAG_LAYER);
+    	
+        
+        janelaAnoMes = new JanelaAnoMes(this, data);
+        painelExterno.add(janelaAnoMes); // Adiciona o JInternalFrame diretamente ao painel principal
+        add(painelExterno);
+        setContentPane(painelPrincipal);
+        painelExterno.setVisible(true);
     }
 	
 	
 	public void acaoBotaoMesAnterior(ActionEvent e) {
-		app.this.atualizarCalendario(1);
+			app.this.atualizarCalendario(1);
+			if(painelExterno.isEnabled()) {
+				janelaAnoMes.dispose();
+				abrirJanelaAnoMes(e);
+			}
 		
 	}
 	
 	
 	public void acaoBotaoMesSeguinte(ActionEvent e) {
 		app.this.atualizarCalendario(2);
+		if(painelExterno.isEnabled()) {
+			janelaAnoMes.dispose();
+			abrirJanelaAnoMes(e);
+		}
 	}
     
     public void atualizarCalendario(int op) {

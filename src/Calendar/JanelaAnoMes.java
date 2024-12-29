@@ -3,14 +3,16 @@ package Calendar;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.time.Month;
 import java.util.Locale;
 
 import javax.swing.JButton;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
-
 import javax.swing.SwingConstants;
+import javax.swing.plaf.basic.BasicInternalFrameUI;
 
 //private app mainApp;
 public class JanelaAnoMes extends JInternalFrame{
@@ -21,19 +23,50 @@ public class JanelaAnoMes extends JInternalFrame{
 	JLabel tituloAno;
 	private app mainApp;
 	
+	
 	public JanelaAnoMes(app mainApp, Calendario data) {
 		//super("Mes - ano");
+		
+		BasicInternalFrameUI ui = (BasicInternalFrameUI) this.getUI();
+		
+		int fixedX = 200;
+        int fixedY = 100;
 		this.data = data;
 		this.mainApp = mainApp;
 		putClientProperty("JInternalFrame.isPalette", Boolean.TRUE);
 	    setBorder(null);
 		this.setBackground(new Color(255, 154, 154));
+		this.setLocation(fixedX, fixedY);
+		this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                setLocation(fixedX, fixedY); // Reposiciona para o local fixo
+            }
+        });
+		
+		
+		ui.setNorthPane(null);
+		this.setVisible(true);
+		
+		this.validate();
+		this.repaint();
+		
         pack();
         show();
+       /*try {
+            this.setSelected(true); // Foca no JInternalFrame
+        } catch (java.beans.PropertyVetoException e) {
+            e.printStackTrace();
+        }*/
+		this.toFront();
+        
         setLayout(null);
 		setSize(400, 300);
-		setBounds(200,100,400,300);
 		setResizable(false);  //Limita o tamanho da janela, não permitindo maximização.
+		
+		
+		
+        
         janela_ativa = true;
         layoutMes(data);
         
